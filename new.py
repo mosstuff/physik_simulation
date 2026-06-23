@@ -6,11 +6,12 @@ import matplotlib.animation as animation
 # A single pendulum
 # -----------------------------
 class Pendulum:
-    def __init__(self, angle_deg, length_cm, pivot_x):
+    def __init__(self, angle_deg, length_cm, pivot_x, mass=1.0):subplots
         self.angle_deg = angle_deg   # current angle (degrees)
         self.angle_vel = 0           # current angular speed (degrees/second)
         self.length_m = length_cm / 100
         self.pivot_x = pivot_x
+        self.mass = mass             # bob mass (kg)
         self.g = 9.81
 
     def tip_position(self):
@@ -22,6 +23,8 @@ class Pendulum:
 
     def gravity_accel_deg(self):
         # angular acceleration from gravity alone (deg/s^2)
+        # NOTE: mass cancels out of the gravity term for a simple pendulum,
+        # so it doesn't appear here even though we now track it.
         rad = radians(self.angle_deg)
         accel = -(self.g / self.length_m) * sin(rad)  # rad/s^2
         return degrees(accel)
@@ -67,9 +70,9 @@ class Spring:
 # Create three pendulums, side by side
 # -----------------------------
 pendulums = [
-    Pendulum(angle_deg=25, length_cm=100, pivot_x=-2),
-    Pendulum(angle_deg=-15, length_cm=100, pivot_x=0),
-    Pendulum(angle_deg=25, length_cm=100, pivot_x=2),
+    Pendulum(angle_deg=45, length_cm=100, pivot_x=-2, mass=0.1),
+    Pendulum(angle_deg=-15, length_cm=100, pivot_x=0, mass=0.1),
+    Pendulum(angle_deg=45, length_cm=100, pivot_x=2, mass=0.1),
 ]
 
 # rest length = distance between neighboring tips when pendulums hang straight down
@@ -86,6 +89,7 @@ springs = [
 # -----------------------------
 def step(dt=0.01):
     # 1. start with gravity-only angular acceleration for each pendulum
+    #    (mass-independent, as noted in Pendulum.gravity_accel_deg)
     accelerations = [p.gravity_accel_deg() for p in pendulums]
 
     # 2. add the effect of each spring
@@ -106,8 +110,8 @@ def step(dt=0.01):
             f_tangent = fx * tangent_x + fy * tangent_y
 
             # torque = force * length -> angular accel = torque / (mass * length^2)
-            # we assume mass = 1 for simplicity (cancels out nicely)
-            angular_accel_rad = f_tangent / p.length_m
+            # for a point mass at the end of a rod: I = mass * length^2
+            angular_accel_rad = f_tangent / (p.mass * p.length_m)
             accelerations[idx] += degrees(angular_accel_rad)
 
     # 3. update velocities and angles using the combined acceleration
@@ -121,10 +125,13 @@ def step(dt=0.01):
 # -----------------------------
 fig, ax = plt.subplots()
 ax.set_xlim(-4, 4)
-ax.set_ylim(-1.5, 0.5)
+ax.set_ylim(-1.5, 1.5)
 ax.set_aspect('equal')
 
-pendulum_lines = [ax.plot([], [], 'o-', lw=2, markersize=12)[0] for _ in pendulums]
+# scale marker size with mass so heavier bobs are visibly bigger
+pendulum_lines = [
+    ax.plot([], [], 'o-', lw=2, markersize=8 + 4 * p.mass)[0] for p in pendulums
+]
 spring_line_1, = ax.plot([], [], '--', color='orange', lw=2)
 spring_line_2, = ax.plot([], [], '--', color='orange', lw=2)
 
