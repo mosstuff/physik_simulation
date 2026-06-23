@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 # A single pendulum
 # -----------------------------
 class Pendulum:
-    def __init__(self, angle_deg, length_cm, pivot_x, mass=1.0):subplots
+    def __init__(self, angle_deg, length_cm, pivot_x, mass=1.0):
         self.angle_deg = angle_deg   # current angle (degrees)
         self.angle_vel = 0           # current angular speed (degrees/second)
         self.length_m = length_cm / 100
